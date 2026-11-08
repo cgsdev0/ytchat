@@ -1,0 +1,25 @@
+#!/bin/bash
+
+urlencode() {
+    # Usage: urlencode "string"
+    local LC_ALL=C
+    for (( i = 0; i < ${#1}; i++ )); do
+        : "${1:i:1}"
+        case "$_" in
+            [a-zA-Z0-9.~_-])
+                printf '%s' "$_"
+            ;;
+
+            *)
+                printf '%%%02X' "'$_"
+            ;;
+        esac
+    done
+    printf '\n'
+}
+CLIENT_SECRET="$(urlencode "$(cat ~/.secrets/google/client-secret)")"
+CLIENT_ID="$(urlencode "$(cat ~/.secrets/google/client-id)")"
+REFRESH_TOKEN="$(urlencode "$(cat ~/.secrets/google/refresh)")"
+
+curl "https://oauth2.googleapis.com/token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${REFRESH_TOKEN}" \
+  -X POST > top_secret.json

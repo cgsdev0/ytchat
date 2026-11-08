@@ -1,0 +1,31 @@
+#!/bin/bash
+
+urlencode() {
+    # Usage: urlencode "string"
+    local LC_ALL=C
+    for (( i = 0; i < ${#1}; i++ )); do
+        : "${1:i:1}"
+        case "$_" in
+            [a-zA-Z0-9.~_-])
+                printf '%s' "$_"
+            ;;
+
+            *)
+                printf '%%%02X' "'$_"
+            ;;
+        esac
+    done
+    printf '\n'
+}
+
+CLIENT_SECRET="$(urlencode "$(cat ~/.secrets/google/client-secret)")"
+CLIENT_ID="$(urlencode "$(cat ~/.secrets/google/client-id)")"
+REDIRECT_URI="$(urlencode "http://localhost:6090/callback")"
+SCOPES="$(urlencode "$(cut -f1 scopes | paste -sd' ')")"
+echo "https://accounts.google.com/o/oauth2/v2/auth?client_id=$CLIENT_ID&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPES}&access_type=offline&prompt=select_account"
+
+echo -n "Enter your code: "
+read -r CODE
+
+curl -Ss "https://oauth2.googleapis.com/token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${CODE}&redirect_uri=${REDIRECT_URI}&grant_type=authorization_code" \
+    -X POST > top_secret.json
